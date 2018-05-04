@@ -105,7 +105,11 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
     private void deleteCalendarFor(final Account account) {
-        final int rows = resolver.delete(asSyncAdapter(Calendars.CONTENT_URI, account.name, account.type), Calendars.ACCOUNT_TYPE + " = ?", new String[]{account.type});
+        final int rows = resolver.delete(
+                asSyncAdapter(Calendars.CONTENT_URI, account.name, account.type),
+                Calendars.ACCOUNT_TYPE + " = ?",
+                new String[]{account.type}
+        );
         if (rows > 1) {
             throw new AssertionError("rows > 1");
         }
