@@ -1,4 +1,4 @@
-package net.chmielowski.syncadaptertest;
+package net.chmielowski.syncadaptertest.sync;
 
 import android.accounts.Account;
 import android.annotation.SuppressLint;

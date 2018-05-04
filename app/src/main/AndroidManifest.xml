@@ -35,7 +35,7 @@
         </service>
 
         <service
-            android:name=".SyncService"
+            android:name=".sync.SyncService"
             android:exported="true"
             android:process=":sync">
             <intent-filter>
@@ -47,7 +47,7 @@
         </service>
 
         <provider
-            android:name=".StubProvider"
+            android:name=".sync.StubProvider"
             android:authorities="net.chmielowski.syncadaptertest"
             android:exported="false"
             android:syncable="true" />
