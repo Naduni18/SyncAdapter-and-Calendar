@@ -5,18 +5,20 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
+import net.chmielowski.syncadaptertest.DaggerMainComponent;
+
+import javax.inject.Inject;
+
 public class SyncService extends Service {
-    private static SyncAdapter adapter = null;
-    private static final Object lock = new Object();
+    @Inject
+    SyncAdapter adapter;
 
     @Override
     public void onCreate() {
-        Log.d("pchm", getClass().getSimpleName() + "::onCreate");
-        synchronized (lock) {
-            if (adapter == null) {
-                adapter = new SyncAdapter(getApplicationContext(), true);
-            }
-        }
+        DaggerMainComponent.builder()
+                .bindContext(this)
+                .build()
+                .inject(this);
     }
 
     @Override

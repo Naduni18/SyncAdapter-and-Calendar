@@ -16,30 +16,33 @@ import android.provider.CalendarContract.Calendars;
 import android.provider.CalendarContract.Events;
 import android.util.Log;
 
+import net.chmielowski.syncadaptertest.Dependency;
+
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     public static final String CALENDAR_ENABLED = "calendar enabled";
     private final ContentResolver resolver;
+    private final Dependency dependency;
 
-    public SyncAdapter(final Context context, final boolean autoInitialize) {
-        super(context, autoInitialize);
-        resolver = context.getContentResolver();
+    @Inject
+    SyncAdapter(final Context context, final Dependency dependency) {
+        super(context, true);
+        this.dependency = dependency;
+        this.resolver = context.getContentResolver();
     }
-
-    public SyncAdapter(final Context context, final boolean autoInitialize,
-                       final boolean allowParallelSyncs) {
-        super(context, autoInitialize, allowParallelSyncs);
-        resolver = context.getContentResolver();
-    }
-
 
     @SuppressWarnings("ConstantConditions")
     @Override
     public void onPerformSync(final Account account, final Bundle extras, final String authority,
                               final ContentProviderClient provider, final SyncResult syncResult) {
+        Log.d("pchm", getClass().getSimpleName() + "::onPerformSync: " + dependency);
         if (!extras.getBoolean(CALENDAR_ENABLED)) {
             deleteCalendarFor(account);
             return;
