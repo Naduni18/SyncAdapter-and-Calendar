@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.Switch;
 
 import net.chmielowski.syncadaptertest.sync.SyncAdapter;
 
@@ -18,12 +19,14 @@ public class MainActivity extends AppCompatActivity {
     public static final String ACCOUNT_TYPE = "net.chmielowski.syncadaptertest";
     public static final String ACCOUNT = "Piotr Chmielowski";
     Account mAccount;
+    private Switch isEnabled;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        isEnabled = findViewById(R.id.enable_sync);
 
         AccountManager manager = (AccountManager) getSystemService(ACCOUNT_SERVICE);
         final Account[] accounts = manager.getAccountsByType(ACCOUNT_TYPE);
@@ -46,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
         Bundle bundle = new Bundle();
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
-        bundle.putBoolean(SyncAdapter.CALENDAR_ENABLED, true);
+        bundle.putBoolean(SyncAdapter.CALENDAR_ENABLED, isEnabled.isChecked());
         ContentResolver.requestSync(mAccount, AUTHORITY, bundle);
     }
 }
