@@ -49,33 +49,23 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         Log.d("pchm", getClass().getSimpleName() + "::onPerformSync " + enabled);
         final Uri uri = Calendars.CONTENT_URI;
 
-        try {
-//            insertCalendar(account, uri);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (!enabled) {
+            deleteCalendarFor(account);
+            return;
         }
-        Log.d("pchm", getClass().getSimpleName() + "::inserted");
 
-//        showAllCalendars(uri);
-
-        Log.d("pchm", " ---- My calendars ---- ");
-        final String[] args = {account.type};
-        delete(account, uri);
-        final Cursor myCalendars = resolver.query(uri, EVENT_PROJECTION, Calendars.ACCOUNT_TYPE + " = ?", args, null);
-        while (myCalendars.moveToNext()) {
-            long calID = myCalendars.getLong(0);
-            String displayName = myCalendars.getString(2);
-            String accountName = myCalendars.getString(1);
-            String accountType = myCalendars.getString(4);
-            Log.d("pchm", String.format("#%d: %s, %s (%s)", calID, displayName, accountName, accountType));
+        final Cursor myCalendars = resolver.query(uri, EVENT_PROJECTION, Calendars.ACCOUNT_TYPE + " = ?", new String[]{account.type}, null);
+        if (!myCalendars.moveToFirst()) {
+            insertCalendar(account, uri);
         }
+        // add events
 
     }
 
-    private void delete(final Account account, final Uri uri) {
-        final int rows = resolver.delete(asSyncAdapter(uri, account.name, account.type), Calendars.ACCOUNT_TYPE + " = ?", new String[]{account.type});
-        if (rows != 1) {
-            throw new AssertionError("rows != 1");
+    private void deleteCalendarFor(final Account account) {
+        final int rows = resolver.delete(asSyncAdapter(Calendars.CONTENT_URI, account.name, account.type), Calendars.ACCOUNT_TYPE + " = ?", new String[]{account.type});
+        if (rows > 1) {
+            throw new AssertionError("rows > 1");
         }
     }
 
