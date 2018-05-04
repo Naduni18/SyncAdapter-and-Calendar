@@ -11,14 +11,8 @@ import android.content.SyncResult;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.CalendarContract;
 import android.provider.CalendarContract.Calendars;
 import android.util.Log;
-
-import java.util.Calendar;
-import java.util.TimeZone;
-
-import static android.provider.CalendarContract.ACCOUNT_TYPE_LOCAL;
 
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
@@ -37,16 +31,12 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
 
     private static final String[] EVENT_PROJECTION = new String[]{
-            Calendars._ID,                           // 0
-            Calendars.ACCOUNT_NAME,                  // 1
-            Calendars.CALENDAR_DISPLAY_NAME,         // 2
-            Calendars.OWNER_ACCOUNT                  // 3
+            Calendars._ID,
+            Calendars.ACCOUNT_NAME,
+            Calendars.CALENDAR_DISPLAY_NAME,
+            Calendars.OWNER_ACCOUNT,
+            Calendars.ACCOUNT_TYPE
     };
-
-    private static final int PROJECTION_ID_INDEX = 0;
-    private static final int PROJECTION_ACCOUNT_NAME_INDEX = 1;
-    private static final int PROJECTION_DISPLAY_NAME_INDEX = 2;
-    private static final int PROJECTION_OWNER_ACCOUNT_INDEX = 3;
 
 
     @SuppressWarnings("ConstantConditions")
@@ -55,30 +45,45 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     public void onPerformSync(final Account account, final Bundle extras, final String authority,
                               final ContentProviderClient provider, final SyncResult syncResult) {
         Log.d("pchm", getClass().getSimpleName() + "::onPerformSync");
-        Cursor cur;
-        Uri uri = Calendars.CONTENT_URI;
-        cur = resolver.query(uri, EVENT_PROJECTION, null, null, null);
+        final Uri uri = Calendars.CONTENT_URI;
 
         try {
-            insertCalendar(account, uri);
+//            insertCalendar(account, uri);
         } catch (Exception e) {
             e.printStackTrace();
         }
         Log.d("pchm", getClass().getSimpleName() + "::inserted");
 
-        while (cur.moveToNext()) {
-            long calID = cur.getLong(PROJECTION_ID_INDEX);
-            String displayName = cur.getString(PROJECTION_DISPLAY_NAME_INDEX);
-            String accountName = cur.getString(PROJECTION_ACCOUNT_NAME_INDEX);
-            String ownerName = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX);
-            Log.d("pchm", String.format("#%d: %s, %s (%s)", calID, displayName, accountName, ownerName));
+//        showAllCalendars(uri);
+
+        Log.d("pchm", " ---- My calendars ---- ");
+        final String[] args = {account.type};
+        final Cursor myCalendars = resolver.query(uri, EVENT_PROJECTION, Calendars.ACCOUNT_TYPE + " = ?", args, null);
+        while (myCalendars.moveToNext()) {
+            long calID = myCalendars.getLong(0);
+            String displayName = myCalendars.getString(2);
+            String accountName = myCalendars.getString(1);
+            String accountType = myCalendars.getString(4);
+            Log.d("pchm", String.format("#%d: %s, %s (%s)", calID, displayName, accountName, accountType));
+        }
+
+    }
+
+    private void showAllCalendars(final Uri uri) {
+        final Cursor calendars = resolver.query(uri, EVENT_PROJECTION, null, null, null);
+        while (calendars.moveToNext()) {
+            long calID = calendars.getLong(0);
+            String displayName = calendars.getString(2);
+            String accountName = calendars.getString(1);
+            String accountType = calendars.getString(4);
+            Log.d("pchm", String.format("#%d: %s, %s (%s)", calID, displayName, accountName, accountType));
         }
     }
 
     private void insertCalendar(final Account account, final Uri uri) {
         final ContentValues values = new ContentValues();
         values.put(Calendars.ACCOUNT_NAME, account.name);
-        values.put(Calendars.ACCOUNT_TYPE, ACCOUNT_TYPE_LOCAL);
+        values.put(Calendars.ACCOUNT_TYPE, account.type);
         values.put(Calendars.CALENDAR_DISPLAY_NAME, "Nowy kalendarz");
         final Uri insert = resolver.insert(asSyncAdapter(uri, account.name, account.type), values);
         Log.d("pchm", getClass().getSimpleName() + "::insertCalendar: " + insert);
