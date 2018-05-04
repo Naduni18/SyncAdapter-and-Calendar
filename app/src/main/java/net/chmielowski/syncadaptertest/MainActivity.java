@@ -3,14 +3,13 @@ package net.chmielowski.syncadaptertest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.ContentResolver;
-import android.content.SyncStatusObserver;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 
-import java.util.function.Consumer;
+import net.chmielowski.syncadaptertest.sync.SyncAdapter;
+
 import java.util.stream.Stream;
 
 public class MainActivity extends AppCompatActivity {
@@ -47,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         Bundle bundle = new Bundle();
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
+        bundle.putBoolean(SyncAdapter.CALENDAR_ENABLED, false);
         ContentResolver.requestSync(mAccount, AUTHORITY, bundle);
     }
 }

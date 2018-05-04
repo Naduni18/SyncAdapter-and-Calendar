@@ -16,6 +16,7 @@ import android.util.Log;
 
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
+    public static final String CALENDAR_ENABLED = "calendar enabled";
     private final ContentResolver resolver;
 
     public SyncAdapter(final Context context, final boolean autoInitialize) {
@@ -44,7 +45,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     @Override
     public void onPerformSync(final Account account, final Bundle extras, final String authority,
                               final ContentProviderClient provider, final SyncResult syncResult) {
-        Log.d("pchm", getClass().getSimpleName() + "::onPerformSync");
+        final boolean enabled = extras.getBoolean(CALENDAR_ENABLED);
+        Log.d("pchm", getClass().getSimpleName() + "::onPerformSync " + enabled);
         final Uri uri = Calendars.CONTENT_URI;
 
         try {
@@ -58,6 +60,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
         Log.d("pchm", " ---- My calendars ---- ");
         final String[] args = {account.type};
+        delete(account, uri);
         final Cursor myCalendars = resolver.query(uri, EVENT_PROJECTION, Calendars.ACCOUNT_TYPE + " = ?", args, null);
         while (myCalendars.moveToNext()) {
             long calID = myCalendars.getLong(0);
@@ -67,6 +70,13 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             Log.d("pchm", String.format("#%d: %s, %s (%s)", calID, displayName, accountName, accountType));
         }
 
+    }
+
+    private void delete(final Account account, final Uri uri) {
+        final int rows = resolver.delete(asSyncAdapter(uri, account.name, account.type), Calendars.ACCOUNT_TYPE + " = ?", new String[]{account.type});
+        if (rows != 1) {
+            throw new AssertionError("rows != 1");
+        }
     }
 
     private void showAllCalendars(final Uri uri) {
