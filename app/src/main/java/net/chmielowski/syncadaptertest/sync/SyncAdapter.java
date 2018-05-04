@@ -12,7 +12,11 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.CalendarContract.Calendars;
+import android.provider.CalendarContract.Events;
 import android.util.Log;
+
+import java.util.Calendar;
+import java.util.TimeZone;
 
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
@@ -48,11 +52,26 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             deleteCalendarFor(account);
             return;
         }
-        final Cursor cursor = getCalendarsFor(account);
+        Cursor cursor = getCalendarsFor(account);
         if (!cursor.moveToFirst()) {
             insertCalendarFor(account);
         }
-        // add events
+        cursor = getCalendarsFor(account);
+        cursor.moveToFirst();
+        final long id = cursor.getLong(0);
+        insertEvent(id);
+    }
+
+    @SuppressLint("MissingPermission")
+    public void insertEvent(final long calendar) {
+        final ContentValues values = new ContentValues();
+        values.put(Events.DTSTART, Calendar.getInstance().getTimeInMillis());
+        values.put(Events.DURATION, 15 * 60 * 1000);
+        values.put(Events.TITLE, "New event");
+        values.put(Events.DESCRIPTION, "Group workout");
+        values.put(Events.CALENDAR_ID, calendar);
+        values.put(Events.EVENT_TIMEZONE, TimeZone.getDefault().getID());
+        resolver.insert(Events.CONTENT_URI, values);
     }
 
     @SuppressLint("MissingPermission")

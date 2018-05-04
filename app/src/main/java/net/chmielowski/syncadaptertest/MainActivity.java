@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
         Bundle bundle = new Bundle();
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
-        bundle.putBoolean(SyncAdapter.CALENDAR_ENABLED, false);
+        bundle.putBoolean(SyncAdapter.CALENDAR_ENABLED, true);
         ContentResolver.requestSync(mAccount, AUTHORITY, bundle);
     }
 }
