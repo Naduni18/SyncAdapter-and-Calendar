@@ -36,15 +36,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
 
-    private static final String[] EVENT_PROJECTION = new String[]{
-            Calendars._ID,
-            Calendars.ACCOUNT_NAME,
-            Calendars.CALENDAR_DISPLAY_NAME,
-            Calendars.OWNER_ACCOUNT,
-            Calendars.ACCOUNT_TYPE
-    };
-
-
     @SuppressWarnings("ConstantConditions")
     @Override
     public void onPerformSync(final Account account, final Bundle extras, final String authority,
@@ -53,36 +44,19 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             deleteCalendarFor(account);
             return;
         }
-        Cursor cursor = getCalendarsFor(account);
-        if (!cursor.moveToFirst()) {
-            insertCalendarFor(account);
-        }
-        cursor = getCalendarsFor(account);
-        cursor.moveToFirst();
-        final long id = cursor.getLong(0);
-        Log.d("pchm", "will insert");
-        final Uri inserted = insertEvent(id, account);
-        Log.d("pchm", "inserted");
-        showAllEvents(inserted);
-        showAllEvents(id);
-        Log.d("pchm", "events shown");
-    }
-
-    private void showAllEvents(final Uri inserted) {
-        final Cursor cursor = resolver.query(
-                inserted,
-                new String[]{Events.TITLE},
-                null,
-                null,
-                null
-        );
-        while (cursor.moveToNext()) {
-            Log.d("pchm", cursor.getString(0));
+        try (final Cursor cursor = getCalendars(account)) {
+            final String calendarId;
+            if (cursor.moveToFirst()) {
+                calendarId = cursor.getString(0);
+            } else {
+                calendarId = insertCalendarFor(account);
+            }
+            insertEvent(calendarId, account);
         }
     }
 
     @SuppressLint("MissingPermission")
-    private Uri insertEvent(final long calendar, Account account) {
+    private void insertEvent(final String calendar, Account account) {
         final ContentValues values = new ContentValues();
         values.put(Events.DTSTART, Calendar.getInstance().getTimeInMillis());
         values.put(Events.DURATION, 15 * 60 * 1000);
@@ -90,26 +64,44 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         values.put(Events.DESCRIPTION, "Group workout");
         values.put(Events.CALENDAR_ID, calendar);
         values.put(Events.EVENT_TIMEZONE, TimeZone.getDefault().getID());
-        return resolver.insert(asSyncAdapter(Events.CONTENT_URI, account.name, account.type), values);
+        resolver.insert(asSyncAdapter(Events.CONTENT_URI, account.name, account.type), values);
+    }
+
+    @SuppressWarnings("unused")
+    private void showAllEvents(final long calendar) {
+        try (final Cursor cursor = getEvents(calendar)) {
+            while (cursor.moveToNext()) {
+                Log.d("pchm", cursor.getString(0));
+            }
+        }
     }
 
     @SuppressLint("MissingPermission")
-    private void showAllEvents(final long calendar) {
-        final Cursor cursor = resolver.query(
+    private Cursor getEvents(final long calendar) {
+        return resolver.query(
                 Events.CONTENT_URI,
                 new String[]{Events.TITLE},
                 Events.CALENDAR_ID + " = ?",
                 new String[]{String.valueOf(calendar)},
                 null
         );
-        while (cursor.moveToNext()) {
-            Log.d("pchm", cursor.getString(0));
-        }
     }
 
     @SuppressLint("MissingPermission")
-    private Cursor getCalendarsFor(final Account account) {
-        return resolver.query(Calendars.CONTENT_URI, EVENT_PROJECTION, Calendars.ACCOUNT_TYPE + " = ?", new String[]{account.type}, null);
+    private Cursor getCalendars(final Account account) {
+        return resolver.query(
+                Calendars.CONTENT_URI,
+                new String[]{
+                        Calendars._ID,
+                        Calendars.ACCOUNT_NAME,
+                        Calendars.CALENDAR_DISPLAY_NAME,
+                        Calendars.OWNER_ACCOUNT,
+                        Calendars.ACCOUNT_TYPE
+                },
+                Calendars.ACCOUNT_TYPE + " = ?",
+                new String[]{account.type},
+                null
+        );
     }
 
     private void deleteCalendarFor(final Account account) {
@@ -119,25 +111,15 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         }
     }
 
-    private void showAllCalendars(final Uri uri) {
-        final Cursor calendars = resolver.query(uri, EVENT_PROJECTION, null, null, null);
-        while (calendars.moveToNext()) {
-            long calID = calendars.getLong(0);
-            String displayName = calendars.getString(2);
-            String accountName = calendars.getString(1);
-            String accountType = calendars.getString(4);
-            Log.d("pchm", String.format("#%d: %s, %s (%s)", calID, displayName, accountName, accountType));
-        }
-    }
-
-    private void insertCalendarFor(final Account account) {
+    @SuppressWarnings("ConstantConditions")
+    private String insertCalendarFor(final Account account) {
         final ContentValues values = new ContentValues();
         values.put(Calendars.ACCOUNT_NAME, account.name);
         values.put(Calendars.ACCOUNT_TYPE, account.type);
         values.put(Calendars.CALENDAR_DISPLAY_NAME, "chmielowski.net");
         values.put(Calendars.CALENDAR_COLOR, Color.rgb(0xFF, 0x00, 0x00));
         final Uri insert = resolver.insert(asSyncAdapter(Calendars.CONTENT_URI, account.name, account.type), values);
-        Log.d("pchm", getClass().getSimpleName() + "::insertCalendar: " + insert);
+        return insert.getLastPathSegment();
     }
 
     private static Uri asSyncAdapter(Uri uri, String account, String accountType) {
