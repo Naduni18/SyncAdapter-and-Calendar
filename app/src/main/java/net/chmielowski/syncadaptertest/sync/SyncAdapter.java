@@ -9,6 +9,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.SyncResult;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.CalendarContract.Calendars;
@@ -133,7 +134,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         final ContentValues values = new ContentValues();
         values.put(Calendars.ACCOUNT_NAME, account.name);
         values.put(Calendars.ACCOUNT_TYPE, account.type);
-        values.put(Calendars.CALENDAR_DISPLAY_NAME, "Nowy kalendarz");
+        values.put(Calendars.CALENDAR_DISPLAY_NAME, "chmielowski.net");
+        values.put(Calendars.CALENDAR_COLOR, Color.rgb(0xFF, 0x00, 0x00));
         final Uri insert = resolver.insert(asSyncAdapter(Calendars.CONTENT_URI, account.name, account.type), values);
         Log.d("pchm", getClass().getSimpleName() + "::insertCalendar: " + insert);
     }
