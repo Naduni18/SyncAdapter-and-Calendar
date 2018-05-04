@@ -41,25 +41,23 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
 
     @SuppressWarnings("ConstantConditions")
-    @SuppressLint({"MissingPermission", "Recycle"})
     @Override
     public void onPerformSync(final Account account, final Bundle extras, final String authority,
                               final ContentProviderClient provider, final SyncResult syncResult) {
-        final boolean enabled = extras.getBoolean(CALENDAR_ENABLED);
-        Log.d("pchm", getClass().getSimpleName() + "::onPerformSync " + enabled);
-        final Uri uri = Calendars.CONTENT_URI;
-
-        if (!enabled) {
+        if (!extras.getBoolean(CALENDAR_ENABLED)) {
             deleteCalendarFor(account);
             return;
         }
-
-        final Cursor myCalendars = resolver.query(uri, EVENT_PROJECTION, Calendars.ACCOUNT_TYPE + " = ?", new String[]{account.type}, null);
-        if (!myCalendars.moveToFirst()) {
-            insertCalendar(account, uri);
+        final Cursor cursor = getCalendarsFor(account);
+        if (!cursor.moveToFirst()) {
+            insertCalendarFor(account);
         }
         // add events
+    }
 
+    @SuppressLint("MissingPermission")
+    private Cursor getCalendarsFor(final Account account) {
+        return resolver.query(Calendars.CONTENT_URI, EVENT_PROJECTION, Calendars.ACCOUNT_TYPE + " = ?", new String[]{account.type}, null);
     }
 
     private void deleteCalendarFor(final Account account) {
@@ -80,12 +78,12 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         }
     }
 
-    private void insertCalendar(final Account account, final Uri uri) {
+    private void insertCalendarFor(final Account account) {
         final ContentValues values = new ContentValues();
         values.put(Calendars.ACCOUNT_NAME, account.name);
         values.put(Calendars.ACCOUNT_TYPE, account.type);
         values.put(Calendars.CALENDAR_DISPLAY_NAME, "Nowy kalendarz");
-        final Uri insert = resolver.insert(asSyncAdapter(uri, account.name, account.type), values);
+        final Uri insert = resolver.insert(asSyncAdapter(Calendars.CONTENT_URI, account.name, account.type), values);
         Log.d("pchm", getClass().getSimpleName() + "::insertCalendar: " + insert);
     }
 
