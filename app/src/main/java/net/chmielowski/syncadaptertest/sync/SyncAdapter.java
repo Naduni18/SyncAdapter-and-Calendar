@@ -59,11 +59,29 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         cursor = getCalendarsFor(account);
         cursor.moveToFirst();
         final long id = cursor.getLong(0);
-        insertEvent(id);
+        Log.d("pchm", "will insert");
+        final Uri inserted = insertEvent(id, account);
+        Log.d("pchm", "inserted");
+        showAllEvents(inserted);
+        showAllEvents(id);
+        Log.d("pchm", "events shown");
+    }
+
+    private void showAllEvents(final Uri inserted) {
+        final Cursor cursor = resolver.query(
+                inserted,
+                new String[]{Events.TITLE},
+                null,
+                null,
+                null
+        );
+        while (cursor.moveToNext()) {
+            Log.d("pchm", cursor.getString(0));
+        }
     }
 
     @SuppressLint("MissingPermission")
-    public void insertEvent(final long calendar) {
+    private Uri insertEvent(final long calendar, Account account) {
         final ContentValues values = new ContentValues();
         values.put(Events.DTSTART, Calendar.getInstance().getTimeInMillis());
         values.put(Events.DURATION, 15 * 60 * 1000);
@@ -71,7 +89,21 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         values.put(Events.DESCRIPTION, "Group workout");
         values.put(Events.CALENDAR_ID, calendar);
         values.put(Events.EVENT_TIMEZONE, TimeZone.getDefault().getID());
-        resolver.insert(Events.CONTENT_URI, values);
+        return resolver.insert(asSyncAdapter(Events.CONTENT_URI, account.name, account.type), values);
+    }
+
+    @SuppressLint("MissingPermission")
+    private void showAllEvents(final long calendar) {
+        final Cursor cursor = resolver.query(
+                Events.CONTENT_URI,
+                new String[]{Events.TITLE},
+                Events.CALENDAR_ID + " = ?",
+                new String[]{String.valueOf(calendar)},
+                null
+        );
+        while (cursor.moveToNext()) {
+            Log.d("pchm", cursor.getString(0));
+        }
     }
 
     @SuppressLint("MissingPermission")
