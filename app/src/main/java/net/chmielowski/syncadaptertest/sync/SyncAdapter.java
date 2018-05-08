@@ -42,7 +42,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     @Override
     public void onPerformSync(final Account account, final Bundle extras, final String authority,
                               final ContentProviderClient provider, final SyncResult syncResult) {
-        Log.d("pchm", getClass().getSimpleName() + "::onPerformSync: " + dependency);
+        Log.d("pchm", getClass().getSimpleName() + "::onPerformSync: { " + syncResult.stats.numIoExceptions);
         if (!extras.getBoolean(CALENDAR_ENABLED)) {
             deleteCalendarFor(account);
             return;
@@ -56,6 +56,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             }
             insertEvent(calendarId, account);
         }
+        syncResult.stats.numIoExceptions++;
+        Log.d("pchm", getClass().getSimpleName() + "::onPerformSync: " + syncResult.stats.numIoExceptions + " }");
     }
 
     @SuppressLint("MissingPermission")
